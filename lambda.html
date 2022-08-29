@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+		<link
+			rel="stylesheet"
+			data-name="vs/editor/editor.main"
+			href="./monaco-editor/min/vs/editor/editor.main.css"
+		/>
+	</head>
+	<body>
+		<h2>JavaScript to Lambda Compiler</h2>
+		<div style="background-color:rgb(30,30,30);color:#aaaaaa;display:flex;flex-direction: row;flex-wrap: nowrap;">
+			<div style="display:flex; flex:1; height: 600px;flex-direction: column;">
+				<div style="white-space:pre-wrap;padding-left:62px;font-size:12px;">const church = n => f => x => Array(n).fill(f).reduce((v, f) => f(v), x)
+const toInt = n => n(x => x + 1)(0);</div>
+				<div id="container" style="flex:1;border: 1px solid grey"></div>
+
+			</div>
+			
+			<div id="lambda" style="color:#ffffff;white-space:pre;flex:0.5; height: 600px; border: 1px solid grey">λx.x</div>
+	
+		</div>
+		<button onclick="run();">run</button>
+		<script>
+			var require = { paths: { vs: './monaco-editor/min/vs' } };
+		</script>
+		<script src="./monaco-editor/min/vs/loader.js"></script>
+		<script src="./monaco-editor/min/vs/editor/editor.main.nls.js"></script>
+		<script src="./monaco-editor/min/vs/editor/editor.main.js"></script>
+		<script src="./LexicalParser.js"></script>
+		<script src="./SyntacticalParser.js"></script>
+		<script>
+			var editor = monaco.editor.create(document.getElementById('container'), {
+				value: `x => x;`,
+				language: 'javascript',
+				theme:"vs-dark"
+			});
+
+			function run(){
+				const church = n => f => x => Array(n).fill(f).reduce((v, f) => f(v), x)
+				const toInt = n => n(x => x + 1)(0);
+				console.log(eval(editor.getValue()));
+			}
+
+			editor.getModel().onDidChangeContent((event) => {
+				let syntacticalParser = new SyntacticalParser()
+				let haveLineTerminator = false;
+				try{
+					for(let token of parseLex(editor.getValue())) {
+						//console.log(token);
+						if((token.Comment && token.Comment.match(/[\n\r\u2028\u2029]/)) || token.LineTerminator){
+							haveLineTerminator = true;
+							continue;
+						}
+						let name = null;
+						if(token.NumericLiteral) {
+							name = "NumericLiteral";
+						}
+						if(token.Identifier) {
+							name = "Identifier";
+						}
+						if(token.Punctuator || token.Keyword) {
+							name = token.toString();
+						}
+						if(name){
+							syntacticalParser.insertSymbol(new SyntacticalParser.Symbol(name, token), haveLineTerminator);
+							haveLineTerminator = false;
+						}
+					}
+					document.getElementById('lambda').textContent = translate(syntacticalParser.grammarTree);
+
+				} catch(e) {
+
+				}
+				
+				function translate(node, useBrackets = false) {
+					//console.log(node);
+					return ({
+						Program(node){
+							return translate(node.childNodes[0]);
+						},
+						SourceElements(node) {
+							return node.childNodes.length === 2 ? `${translate(node.childNodes[1])}\n${translate(node.childNodes[0])}` : translate(node.childNodes[0]);
+						},
+						Statement(node){
+							return node.childNodes.length === 2 ? 
+								translate(node.childNodes[1]) :
+								`令 ${translate(node.childNodes[3])} = ${translate(node.childNodes[1])}`
+						},
+						Expression(node, useBrackets){
+							if(node.childNodes.length !== 1 && node.childNodes[3].childNodes.length === 1 && node.childNodes[3].childNodes[0].token && node.childNodes[3].childNodes[0].token.toString() === "church")
+								return translate(node.childNodes[1])
+							return node.childNodes.length === 1 ? translate(node.childNodes[0], useBrackets) :
+								useBrackets ? `(${translate(node.childNodes[3])} ${translate(node.childNodes[1], true)})` :
+								`${translate(node.childNodes[3])} ${translate(node.childNodes[1], true)}`
+						},
+						Function(node, useBrackets){
+							return useBrackets ? `(λ${translate(node.childNodes[2])}.${translate(node.childNodes[0])})` :
+								`λ${translate(node.childNodes[2])}.${translate(node.childNodes[0])}`
+						},
+						Identifier(node){
+							return node.token.toString();
+						},
+						NumericLiteral(node){
+							return node.token.toString();
+						}
+					})[node.name](node, useBrackets);
+				}
+
+
+
+				
+			});
+		</script>
+	</body>
+</html>
