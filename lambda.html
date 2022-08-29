@@ -10,7 +10,7 @@
 	</head>
 	<body>
 		<h2>JavaScript to Lambda Compiler</h2>
-		<div style="background-color:rgb(30,30,30);color:#aaaaaa;display:flex;flex-direction: row;flex-wrap: nowrap;">
+		<div style="white-space:pre-wrap;background-color:rgb(30,30,30);color:#aaaaaa;display:flex;flex-direction: row;flex-wrap: nowrap;">
 			<div style="display:flex; flex:1; height: 600px;flex-direction: column;">
 				<div style="white-space:pre-wrap;padding-left:62px;font-size:12px;">const church = n => f => x => Array(n).fill(f).reduce((v, f) => f(v), x)
 const toInt = n => n(x => x + 1)(0);</div>
@@ -18,7 +18,7 @@ const toInt = n => n(x => x + 1)(0);</div>
 
 			</div>
 			
-			<div id="lambda" style="color:#ffffff;white-space:pre;flex:0.5; height: 600px; border: 1px solid grey">λx.x</div>
+			<div id="lambda" style="color:#ffffff;white-space:pre-wrap;flex:1; height: 600px; border: 1px solid grey">λx.x</div>
 	
 		</div>
 		<button onclick="run();">run</button>
@@ -40,7 +40,8 @@ const toInt = n => n(x => x + 1)(0);</div>
 			function run(){
 				const church = n => f => x => Array(n).fill(f).reduce((v, f) => f(v), x)
 				const toInt = n => n(x => x + 1)(0);
-				console.log(eval(editor.getValue()));
+				let r = eval(editor.getValue());
+				console.log(r);
 			}
 
 			editor.getModel().onDidChangeContent((event) => {
