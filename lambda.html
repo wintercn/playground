@@ -31,88 +31,119 @@ const toInt = n => n(x => x + 1)(0);</div>
 		<script src="./LexicalParser.js"></script>
 		<script src="./SyntacticalParser.js"></script>
 		<script>
-			var editor = monaco.editor.create(document.getElementById('container'), {
-				value: `x => x;`,
-				language: 'javascript',
-				theme:"vs-dark"
-			});
 
-			function run(){
-				const church = n => f => x => Array(n).fill(f).reduce((v, f) => f(v), x)
-				const toInt = n => n(x => x + 1)(0);
-				let r = eval(editor.getValue());
-				console.log(r);
+			getContent();
+
+			async function getContent() {
+				let url = new URL(location.href);
+				
+				let source = url.searchParams.get("source");//"gist:2e394d1cdb706d15e16e54398762a4ba";
+				let parts;
+				if(parts = source.match(/^gist\:([^\/]+)(?:\/([\s\S]+))?/)) {
+					
+					let r = await (await fetch(`https://api.github.com/gists/${parts[1]}`)).json();
+					
+					
+					if(parts[2]) {
+						init(r.files[parts[1]].content);
+					} else {
+						init(r.files[Object.getOwnPropertyNames(r.files)[0]].content);
+					}
+
+				} else {
+					let r = await (await fetch(source)).text();
+					
+					init(r);
+				}
+				//console.log(source);
 			}
 
-			editor.getModel().onDidChangeContent((event) => {
-				let syntacticalParser = new SyntacticalParser()
-				let haveLineTerminator = false;
-				try{
-					for(let token of parseLex(editor.getValue())) {
-						//console.log(token);
-						if((token.Comment && token.Comment.match(/[\n\r\u2028\u2029]/)) || token.LineTerminator){
-							haveLineTerminator = true;
-							continue;
+			function init(content){
+				var editor = monaco.editor.create(document.getElementById('container'), {
+					value: content ? content : `x => x;`,
+					language: 'javascript',
+					theme:"vs-dark"
+				});
+
+				function run(){
+					const church = n => f => x => Array(n).fill(f).reduce((v, f) => f(v), x)
+					const toInt = n => n(x => x + 1)(0);
+					let r = eval(editor.getValue());
+					console.log(r);
+				}
+
+				editor.getModel().onDidChangeContent((event) => {
+					let syntacticalParser = new SyntacticalParser()
+					let haveLineTerminator = false;
+					try{
+						for(let token of parseLex(editor.getValue())) {
+							//console.log(token);
+							if((token.Comment && token.Comment.match(/[\n\r\u2028\u2029]/)) || token.LineTerminator){
+								haveLineTerminator = true;
+								continue;
+							}
+							let name = null;
+							if(token.NumericLiteral) {
+								name = "NumericLiteral";
+							}
+							if(token.Identifier) {
+								name = "Identifier";
+							}
+							if(token.Punctuator || token.Keyword) {
+								name = token.toString();
+							}
+							if(name){
+								syntacticalParser.insertSymbol(new SyntacticalParser.Symbol(name, token), haveLineTerminator);
+								haveLineTerminator = false;
+							}
 						}
-						let name = null;
-						if(token.NumericLiteral) {
-							name = "NumericLiteral";
-						}
-						if(token.Identifier) {
-							name = "Identifier";
-						}
-						if(token.Punctuator || token.Keyword) {
-							name = token.toString();
-						}
-						if(name){
-							syntacticalParser.insertSymbol(new SyntacticalParser.Symbol(name, token), haveLineTerminator);
-							haveLineTerminator = false;
-						}
+						document.getElementById('lambda').textContent = translate(syntacticalParser.grammarTree);
+
+					} catch(e) {
+
 					}
-					document.getElementById('lambda').textContent = translate(syntacticalParser.grammarTree);
-
-				} catch(e) {
-
-				}
-				
-				function translate(node, useBrackets = false) {
-					//console.log(node);
-					return ({
-						Program(node){
-							return translate(node.childNodes[0]);
-						},
-						SourceElements(node) {
-							return node.childNodes.length === 2 ? `${translate(node.childNodes[1])}\n${translate(node.childNodes[0])}` : translate(node.childNodes[0]);
-						},
-						Statement(node){
-							return node.childNodes.length === 2 ? 
-								translate(node.childNodes[1]) :
-								`令 ${translate(node.childNodes[3])} = ${translate(node.childNodes[1])}`
-						},
-						Expression(node, useBrackets){
-							if(node.childNodes.length !== 1 && node.childNodes[3].childNodes.length === 1 && node.childNodes[3].childNodes[0].token && node.childNodes[3].childNodes[0].token.toString() === "church")
-								return translate(node.childNodes[1])
-							return node.childNodes.length === 1 ? translate(node.childNodes[0], useBrackets) :
-								useBrackets ? `(${translate(node.childNodes[3])} ${translate(node.childNodes[1], true)})` :
-								`${translate(node.childNodes[3])} ${translate(node.childNodes[1], true)}`
-						},
-						Function(node, useBrackets){
-							return useBrackets ? `(λ${translate(node.childNodes[2])}.${translate(node.childNodes[0])})` :
-								`λ${translate(node.childNodes[2])}.${translate(node.childNodes[0])}`
-						},
-						Identifier(node){
-							return node.token.toString();
-						},
-						NumericLiteral(node){
-							return node.token.toString();
-						}
-					})[node.name](node, useBrackets);
-				}
+					
+					function translate(node, useBrackets = false) {
+						//console.log(node);
+						return ({
+							Program(node){
+								return translate(node.childNodes[0]);
+							},
+							SourceElements(node) {
+								return node.childNodes.length === 2 ? `${translate(node.childNodes[1])}\n${translate(node.childNodes[0])}` : translate(node.childNodes[0]);
+							},
+							Statement(node){
+								return node.childNodes.length === 2 ? 
+									translate(node.childNodes[1]) :
+									`令 ${translate(node.childNodes[3])} = ${translate(node.childNodes[1])}`
+							},
+							Expression(node, useBrackets){
+								if(node.childNodes.length !== 1 && node.childNodes[3].childNodes.length === 1 && node.childNodes[3].childNodes[0].token && node.childNodes[3].childNodes[0].token.toString() === "church")
+									return translate(node.childNodes[1])
+								return node.childNodes.length === 1 ? translate(node.childNodes[0], useBrackets) :
+									useBrackets ? `(${translate(node.childNodes[3])} ${translate(node.childNodes[1], true)})` :
+									`${translate(node.childNodes[3])} ${translate(node.childNodes[1], true)}`
+							},
+							Function(node, useBrackets){
+								return useBrackets ? `(λ${translate(node.childNodes[2])}.${translate(node.childNodes[0])})` :
+									`λ${translate(node.childNodes[2])}.${translate(node.childNodes[0])}`
+							},
+							Identifier(node){
+								return node.token.toString();
+							},
+							NumericLiteral(node){
+								return node.token.toString();
+							}
+						})[node.name](node, useBrackets);
+					}
 
 
 
-				
-			});
+					
+				});
+			}
+
+
 		</script>
 	</body>
 </html>
