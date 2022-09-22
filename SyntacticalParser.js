@@ -1,7 +1,7 @@
 ﻿void function (){
     var rules = 
     {
-        "Expression":[["NumericLiteral"], ["Identifier"], ["Function"], ["Expression", "(", "Expression", ")"]], 
+        "Expression":[["(","Expression", ")"],["NumericLiteral"], ["Identifier"], ["Function"], ["Expression", "(", "Expression", ")"]], 
         "Function":[["Identifier", "=>", "Expression"]],
         "Statement":[["Expression", ";"], ["const", "Identifier", "=", "Expression", ";"]], 
         "Program":[["SourceElements"]], 

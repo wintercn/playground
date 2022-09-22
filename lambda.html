@@ -43,6 +43,9 @@ const toInt = n => n(x => x + 1)(0);</div>
 				let url = new URL(location.href);
 				
 				let source = url.searchParams.get("source");//"gist:2e394d1cdb706d15e16e54398762a4ba";
+				if(!source)
+					return init("x => x");
+				
 				let parts;
 				if(parts = source.match(/^gist\:([^\/]+)(?:\/([\s\S]+))?/)) {
 					
@@ -78,7 +81,7 @@ const toInt = n => n(x => x + 1)(0);</div>
 					let haveLineTerminator = false;
 					try{
 						for(let token of parseLex(editor.getValue())) {
-							//console.log(token);
+							console.log(token);
 							if((token.Comment && token.Comment.match(/[\n\r\u2028\u2029]/)) || token.LineTerminator){
 								haveLineTerminator = true;
 								continue;
@@ -101,7 +104,7 @@ const toInt = n => n(x => x + 1)(0);</div>
 						document.getElementById('lambda').textContent = translate(syntacticalParser.grammarTree);
 
 					} catch(e) {
-
+						console.log(e);
 					}
 
 
@@ -121,8 +124,12 @@ const toInt = n => n(x => x + 1)(0);</div>
 									`令 ${translate(node.childNodes[3])} = ${translate(node.childNodes[1])}`
 							},
 							Expression(node, useBrackets){
+								console.log(node);
+								if(node.childNodes[0].name === ")" && node.childNodes.length === 3)
+									return `(${translate(node.childNodes[1])})`;
 								if(node.childNodes.length !== 1 && node.childNodes[3].childNodes.length === 1 && node.childNodes[3].childNodes[0].token && node.childNodes[3].childNodes[0].token.toString() === "church")
 									return translate(node.childNodes[1])
+
 								return node.childNodes.length === 1 ? translate(node.childNodes[0], useBrackets) :
 									useBrackets ? `(${translate(node.childNodes[3])} ${translate(node.childNodes[1], true)})` :
 									`${translate(node.childNodes[3])} ${translate(node.childNodes[1], true)}`
