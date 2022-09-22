@@ -65,14 +65,15 @@ const toInt = n => n(x => x + 1)(0);</div>
 					theme:"vs-dark"
 				});
 
+				parse();
+
 				function run(){
 					const church = n => f => x => Array(n).fill(f).reduce((v, f) => f(v), x)
 					const toInt = n => n(x => x + 1)(0);
 					let r = eval(editor.getValue());
 					console.log(r);
 				}
-
-				editor.getModel().onDidChangeContent((event) => {
+				function parse(){
 					let syntacticalParser = new SyntacticalParser()
 					let haveLineTerminator = false;
 					try{
@@ -102,6 +103,8 @@ const toInt = n => n(x => x + 1)(0);</div>
 					} catch(e) {
 
 					}
+
+
 					
 					function translate(node, useBrackets = false) {
 						//console.log(node);
@@ -139,7 +142,9 @@ const toInt = n => n(x => x + 1)(0);</div>
 
 
 
-					
+				}
+				editor.getModel().onDidChangeContent((event) => {
+					parse();
 				});
 			}
 
