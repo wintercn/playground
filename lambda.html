@@ -81,7 +81,7 @@ const toInt = n => n(x => x + 1)(0);</div>
 					let haveLineTerminator = false;
 					try{
 						for(let token of parseLex(editor.getValue())) {
-							console.log(token);
+							//console.log(token);
 							if((token.Comment && token.Comment.match(/[\n\r\u2028\u2029]/)) || token.LineTerminator){
 								haveLineTerminator = true;
 								continue;
@@ -124,7 +124,7 @@ const toInt = n => n(x => x + 1)(0);</div>
 									`令 ${translate(node.childNodes[3])} = ${translate(node.childNodes[1])}`
 							},
 							Expression(node, useBrackets){
-								console.log(node);
+								//console.log(node);
 								if(node.childNodes[0].name === ")" && node.childNodes.length === 3)
 									return `(${translate(node.childNodes[1])})`;
 								if(node.childNodes.length !== 1 && node.childNodes[3].childNodes.length === 1 && node.childNodes[3].childNodes[0].token && node.childNodes[3].childNodes[0].token.toString() === "church")
