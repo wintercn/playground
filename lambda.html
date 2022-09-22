@@ -33,7 +33,12 @@ const toInt = n => n(x => x + 1)(0);</div>
 		<script>
 
 			getContent();
-
+			function run(){
+				const church = n => f => x => Array(n).fill(f).reduce((v, f) => f(v), x)
+				const toInt = n => n(x => x + 1)(0);
+				let r = eval(editor.getValue());
+				console.log(r);
+			}
 			async function getContent() {
 				let url = new URL(location.href);
 				
@@ -67,12 +72,7 @@ const toInt = n => n(x => x + 1)(0);</div>
 
 				parse();
 
-				function run(){
-					const church = n => f => x => Array(n).fill(f).reduce((v, f) => f(v), x)
-					const toInt = n => n(x => x + 1)(0);
-					let r = eval(editor.getValue());
-					console.log(r);
-				}
+
 				function parse(){
 					let syntacticalParser = new SyntacticalParser()
 					let haveLineTerminator = false;
