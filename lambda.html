@@ -31,7 +31,7 @@ const toInt = n => n(x => x + 1)(0);</div>
 		<script src="./LexicalParser.js"></script>
 		<script src="./SyntacticalParser.js"></script>
 		<script>
-
+			var editor;
 			getContent();
 			function run(){
 				const church = n => f => x => Array(n).fill(f).reduce((v, f) => f(v), x)
@@ -64,7 +64,7 @@ const toInt = n => n(x => x + 1)(0);</div>
 			}
 
 			function init(content){
-				var editor = monaco.editor.create(document.getElementById('container'), {
+				editor = monaco.editor.create(document.getElementById('container'), {
 					value: content ? content : `x => x;`,
 					language: 'javascript',
 					theme:"vs-dark"
